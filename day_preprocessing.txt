@@ -1,0 +1,481 @@
+##############################
+### 0.HIMAWARI extrapolate ### 
+##############################
+
+import arcpy
+from arcpy.sa import *
+import os
+
+arcpy.env.overwriteOutput = True
+
+
+# ---------------------------
+# USER PARAMETERS
+inRaster = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\Himawari_UTM_C.tif"
+inPolygon = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\shapefile\ppb_square_b.shp"
+outRaster = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\00_Himawari_idw_1000m.tif"
+cellSize = 1000            # target cell size in map units (1000 m)
+maxDistance = 50000        # max extrapolation distance (meters) — adjust as needed
+power = 2.0                # IDW power parameter (2 is typical)
+# ---------------------------
+
+try:
+    arcpy.CheckOutExtension("Spatial")
+
+    # Ensure inputs exist
+    if not arcpy.Exists(inRaster):
+        raise Exception("Input raster not found: " + inRaster)
+    if not arcpy.Exists(inPolygon):
+        raise Exception("Input polygon not found: " + inPolygon)
+
+    # Work in the scratch geodatabase
+    scratchgdb = arcpy.env.scratchGDB
+    if not scratchgdb:
+        # fallback to in_memory if no scratchGDB
+        scratchgdb = "in_memory"
+
+    # 1) Make sure polygon is in same CRS as raster (project if needed)
+    rasDesc = arcpy.Describe(inRaster)
+    rasSR = rasDesc.spatialReference
+    polyDesc = arcpy.Describe(inPolygon)
+    polySR = polyDesc.spatialReference
+
+    projectedPoly = inPolygon
+    if rasSR.name != polySR.name:
+        projectedPoly = os.path.join(scratchgdb, "poly_proj")
+        arcpy.management.Project(inPolygon, projectedPoly, rasSR)
+        arcpy.AddMessage("Projected polygon to raster CRS: {}".format(rasSR.name))
+    else:
+        arcpy.AddMessage("Polygon already in raster CRS: {}".format(rasSR.name))
+
+    # 2) Convert raster to points (points only where raster had data)
+    pts_fc = os.path.join(scratchgdb, "raster_points")
+    if arcpy.Exists(pts_fc):
+        arcpy.management.Delete(pts_fc)
+    arcpy.conversion.RasterToPoint(inRaster, pts_fc, "VALUE")
+    arcpy.AddMessage("RasterToPoint produced {} points".format(arcpy.GetCount_management(pts_fc)))
+
+        # 3) Set Z field explicitly
+    z_field = "grid_code"
+
+    arcpy.AddMessage("Using '{}' as Z field for interpolation".format(z_field))
+
+    # 4) Set environment to target area & cell size
+    arcpy.env.snapRaster = inRaster     # keeps alignment if you want it matched to input raster
+    arcpy.env.cellSize = cellSize
+    arcpy.env.extent = projectedPoly    # limit processing extent to polygon (speeds up)
+
+    # 5) Run IDW
+    idw_raster = Idw(pts_fc, z_field, cellSize, power)
+
+    # Save temporary raster and create Raster object for masking
+    tmp_idw_path = r"in_memory\tmp_idw"
+    idw_raster.save(tmp_idw_path)
+    tmp_idw = Raster(tmp_idw_path)
+    idw_raster.save(tmp_idw_path)
+    tmp_idw = Raster(tmp_idw_path)  # <-- THIS is needed
+    arcpy.AddMessage("IDW raster created (temporary).")
+
+    # 6) Limit extrapolation by distance from known data
+    dist_raster = EucDistance(pts_fc, maxDistance, cellSize)
+    idw_masked = Con(Raster(dist_raster) <= maxDistance, tmp_idw)
+    tmp_masked = os.path.join(scratchgdb, "tmp_idw_masked")
+    idw_masked.save(tmp_masked)
+    arcpy.AddMessage("Applied maxDistance mask ({} m).".format(maxDistance))
+
+    # 7) Clip / mask to the polygon exactly
+    final = ExtractByMask(tmp_masked, projectedPoly)
+    # Save as 32-bit float
+    final.save(outRaster)
+    arcpy.AddMessage("Final extrapolated raster saved: {}".format(outRaster))
+
+except Exception as e:
+    arcpy.AddError("Error: {}".format(e))
+    raise
+finally:
+    try:
+        arcpy.CheckInExtension("Spatial")
+    except:
+        pass
+
+###########################
+### 1.HIMAWARI Resample ### 
+###########################
+import arcpy, os
+from arcpy.sa import *
+
+arcpy.env.overwriteOutput = True
+
+# Input rasters
+raster1 = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20230107\LST_20230107_mos_C.tif"   # 30 m
+raster2 = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\00_Himawari_idw_1000m.tif"  # 1000 m
+
+# Output folder
+outFolder = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119"
+os.makedirs(outFolder, exist_ok=True)
+
+# Step 1: Decide reference raster (Raster1)
+ref_raster = raster1
+
+# Get reference raster properties
+desc = arcpy.Describe(ref_raster)
+cell_size = desc.meanCellWidth  # 100 m
+extent = desc.extent
+sr = desc.spatialReference
+
+arcpy.env.snapRaster = ref_raster
+arcpy.env.cellSize = cell_size
+arcpy.env.extent = extent
+
+# Step 2: Resample Raster2 to match Raster1
+resampled_raster2 = os.path.join(outFolder, "01_himawari.tif")
+arcpy.management.Resample(
+    in_raster=raster2,
+    out_raster=resampled_raster2,
+    cell_size=cell_size,
+    resampling_type="BILINEAR"
+)
+print("Raster2 resampled and aligned:", resampled_raster2)
+
+####################################################
+#### 2. HIMAWARI Extract by mask PORT PHILIP BAY ###
+####################################################
+import arcpy
+from arcpy.sa import *
+
+# Enable Spatial Analyst extension
+arcpy.CheckOutExtension("Spatial")
+arcpy.env.overwriteOutput = True
+
+# ---------------------------
+# User parameters
+in_raster = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\01_himawari.tif"
+mask_polygon = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\shapefile\ppb_square_b.shp"
+out_raster = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\02_himawari_ppb.tif"
+# ---------------------------
+
+try:
+    # Extract raster by mask
+    masked_raster = ExtractByMask(in_raster, mask_polygon)
+    
+    # Save the output
+    masked_raster.save(out_raster)
+    
+    print("Raster clipped successfully:", out_raster)
+
+except Exception as e:
+    print("Error:", e)
+
+finally:
+    # Release the Spatial Analyst extension
+    arcpy.CheckInExtension("Spatial")
+
+##################################################
+### 3. MODIS Extract by mask overall rectangle ###
+##################################################
+import arcpy
+from arcpy.sa import *
+
+# Enable Spatial Analyst extension
+arcpy.CheckOutExtension("Spatial")
+arcpy.env.overwriteOutput = True
+
+# ---------------------------
+# User parameters
+in_raster = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\LST_Day_UTM_1km_C.tif"
+mask_polygon = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\shapefile\MODIS_fishnet_diss.shp"
+out_raster = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\03_modis_extract.tif"
+# ---------------------------
+
+try:
+    # Match environment to polygon
+    arcpy.env.mask = mask_polygon
+    arcpy.env.extent = mask_polygon
+    arcpy.env.snapRaster = in_raster
+    
+    # Extract raster by mask
+    masked_raster = ExtractByMask(in_raster, mask_polygon)
+    
+    # Save the output
+    masked_raster.save(out_raster)
+    
+    print("Raster clipped successfully:", out_raster)
+
+except Exception as e:
+    print("Error:", e)
+
+finally:
+    # Release the Spatial Analyst extension
+    arcpy.CheckInExtension("Spatial")
+
+#####################
+### 4. MODIS Fill ###
+#####################
+import arcpy
+from arcpy.sa import *
+
+arcpy.CheckOutExtension("Spatial")
+arcpy.env.overwriteOutput = True
+
+# Input raster
+raster_in = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\03_modis_extract.tif"
+filled_raster = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\04_modis_fill.tif"
+
+# Load raster
+filled_raster_obj = Raster(raster_in)
+
+iteration = 0
+max_iterations = 10  # safety stop so it won't run forever
+
+while True:
+    iteration += 1
+    
+    # Smooth/estimate with neighborhood mean
+    filled = FocalStatistics(filled_raster_obj, NbrRectangle(3, 3, "CELL"), "MEAN")
+    
+    # Fill only NoData cells
+    new_filled_raster = Con(IsNull(filled_raster_obj), filled, filled_raster_obj)
+    
+    # Check if any NoData remains
+    remaining_nodata = arcpy.GetRasterProperties_management(new_filled_raster, "ANYNODATA")
+    remaining_nodata = remaining_nodata.getOutput(0)  # "1" = some NoData, "0" = none
+    
+    print(f"Iteration {iteration} complete. ANYNODATA = {remaining_nodata}")
+    
+    # Assign for next loop
+    filled_raster_obj = new_filled_raster
+    
+    # Stop if no NoData remains or safety limit reached
+    if remaining_nodata == "0" or iteration >= max_iterations:
+        break
+
+# Save result
+filled_raster_obj.save(filled_raster)
+print("✅ Filled raster saved:", filled_raster)
+
+arcpy.CheckInExtension("Spatial")
+
+###################################
+### 5. MODIS resample and align ###
+###################################
+import arcpy, os
+from arcpy.sa import *
+
+arcpy.env.overwriteOutput = True
+
+# Input rasters
+raster1 = r"C:\Users\percy\Documents\studies\data\Chapter2\modis_himawari\landsat\LST_20230107_mos_C.tif"   # 30 m
+raster2 = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\04_modis_fill.tif"  # 1000 m
+
+# Output folder
+outFolder = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119"
+os.makedirs(outFolder, exist_ok=True)
+
+# Step 1: Decide reference raster (Raster1)
+ref_raster = raster1
+
+# Get reference raster properties
+desc = arcpy.Describe(ref_raster)
+cell_size = desc.meanCellWidth  # 30 m
+extent = desc.extent
+sr = desc.spatialReference
+
+arcpy.env.snapRaster = ref_raster
+arcpy.env.cellSize = cell_size
+arcpy.env.extent = extent
+
+# Step 2: Resample Raster2 to match Raster1
+resampled_raster2 = os.path.join(outFolder, "05_modis_resampled.tif")
+arcpy.management.Resample(
+    in_raster=raster2,
+    out_raster=resampled_raster2,
+    cell_size=cell_size,
+    resampling_type="NEAREST"
+)
+print("Raster2 resampled and aligned:", resampled_raster2)
+
+#############################################
+### 6. Extract by mask NO PORT PHILIP BAY ###
+#############################################
+import arcpy
+from arcpy.sa import *
+
+# Enable Spatial Analyst extension
+arcpy.CheckOutExtension("Spatial")
+arcpy.env.overwriteOutput = True
+
+# ---------------------------
+# User parameters
+in_raster = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\05_modis_resampled.tif"
+mask_polygon = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\shapefile\MODIS_extractByMask.shp"
+out_raster = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\06_modis_extract.tif"
+# ---------------------------
+
+try:
+    # Match environment to polygon
+    arcpy.env.mask = mask_polygon
+    arcpy.env.extent = mask_polygon
+    arcpy.env.snapRaster = in_raster
+    
+    # Extract raster by mask
+    masked_raster = ExtractByMask(in_raster, mask_polygon)
+    
+    # Save the output
+    masked_raster.save(out_raster)
+    
+    print("Raster clipped successfully:", out_raster)
+
+except Exception as e:
+    print("Error:", e)
+
+finally:
+    # Release the Spatial Analyst extension
+    arcpy.CheckInExtension("Spatial")
+
+
+#############################
+### 7. ALIGN AND MOSAIC 1 ###
+#############################
+import arcpy
+import os
+
+arcpy.env.overwriteOutput = True
+
+# Input rasters
+lst_raster = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\06_modis_extract.tif"   # reference raster
+sst_raster = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\02_himawari_ppb.tif"   # raster to align
+# Output folder
+outFolder = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119"
+if not os.path.exists(outFolder):
+    os.makedirs(outFolder)
+
+# Get LST cell size
+lst_desc = arcpy.Describe(lst_raster)
+cell_size_x = lst_desc.meanCellWidth
+cell_size_y = lst_desc.meanCellHeight
+
+# Step 1: Resample SST to LST grid
+aligned_sst = os.path.join(outFolder, "07_modis_himawari_aligned.tif")
+arcpy.env.snapRaster = lst_raster
+
+arcpy.management.Resample(
+    in_raster=sst_raster,
+    out_raster=aligned_sst,
+    cell_size=cell_size_x,       # numeric value
+    resampling_type="BILINEAR"
+)
+
+print("Aligned SST saved:", aligned_sst)
+
+#############################
+### 8. ALIGN AND MOSAIC 2 ###
+#############################
+
+# Ensure output covers the full extent of LST
+arcpy.env.extent = lst_raster  # sets processing extent
+
+# Step 2: Mosaic LST + aligned SST
+lst_desc = arcpy.Describe(lst_raster)
+cell_size = lst_desc.meanCellWidth  # numeric
+
+# LST values are preserved where both rasters overlap
+mosaic_out = os.path.join(outFolder, "08_modis_himawari_mosaic.tif")
+arcpy.management.MosaicToNewRaster(
+    [lst_raster, aligned_sst],
+    outFolder,
+    "08_modis_himawari_mosaic.tif",
+    coordinate_system_for_the_raster=arcpy.Describe(lst_raster).spatialReference,
+    pixel_type="32_BIT_FLOAT",
+    cellsize=lst_desc.meanCellWidth,
+    number_of_bands=1,
+    mosaic_method="FIRST",
+    mosaic_colormap_mode="FIRST"
+)
+
+print("Mosaic saved:", mosaic_out)
+
+############################################
+### 9. Extract by mask ALIGNED RECTANGLE ###
+############################################
+import arcpy
+from arcpy.sa import *
+
+# Enable Spatial Analyst extension
+arcpy.CheckOutExtension("Spatial")
+arcpy.env.overwriteOutput = True
+
+# ---------------------------
+# User parameters
+in_raster = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\08_modis_himawari_mosaic.tif"
+mask_polygon = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\shapefile\modis_30m_fish_diss_e.shp"
+out_raster = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\09_modis_himawari_extract.tif"
+# ---------------------------
+
+try:
+    # Match environment to polygon
+    arcpy.env.mask = mask_polygon
+    arcpy.env.extent = mask_polygon
+    arcpy.env.snapRaster = in_raster
+    
+    # Extract raster by mask
+    masked_raster = ExtractByMask(in_raster, mask_polygon)
+    
+    # Save the output
+    masked_raster.save(out_raster)
+    
+    print("Raster clipped successfully:", out_raster)
+
+except Exception as e:
+    print("Error:", e)
+
+finally:
+    # Release the Spatial Analyst extension
+    arcpy.CheckInExtension("Spatial")
+
+######################################
+### 10. LAST check for NODATA Fill ###
+######################################
+
+import arcpy
+from arcpy.sa import *
+
+arcpy.CheckOutExtension("Spatial")
+arcpy.env.overwriteOutput = True
+
+# Input raster
+raster_in = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\09_modis_himawari_extract.tif"
+filled_raster = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\raw\day\20220119\10_modis_himawari_fill.tif"
+
+# Load raster
+filled_raster_obj = Raster(raster_in)
+
+iteration = 0
+max_iterations = 10  # safety stop so it won't run forever
+
+while True:
+    iteration += 1
+    
+    # Smooth/estimate with neighborhood mean
+    filled = FocalStatistics(filled_raster_obj, NbrRectangle(3, 3, "CELL"), "MEAN")
+    
+    # Fill only NoData cells
+    new_filled_raster = Con(IsNull(filled_raster_obj), filled, filled_raster_obj)
+    
+    # Check if any NoData remains
+    remaining_nodata = arcpy.GetRasterProperties_management(new_filled_raster, "ANYNODATA")
+    remaining_nodata = remaining_nodata.getOutput(0)  # "1" = some NoData, "0" = none
+    
+    print(f"Iteration {iteration} complete. ANYNODATA = {remaining_nodata}")
+    
+    # Assign for next loop
+    filled_raster_obj = new_filled_raster
+    
+    # Stop if no NoData remains or safety limit reached
+    if remaining_nodata == "0" or iteration >= max_iterations:
+        break
+
+# Save result
+filled_raster_obj.save(filled_raster)
+print("✅ Filled raster saved:", filled_raster)
+
+arcpy.CheckInExtension("Spatial")

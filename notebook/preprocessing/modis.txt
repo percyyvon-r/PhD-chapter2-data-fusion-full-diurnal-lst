@@ -1,0 +1,3 @@
+gdalwarp -t_srs EPSG:32755 -tr 1000 1000 -r bilinear "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/day/20230107/MOD11A1.061_LST_Day_1km_doy2024354000000_aid0001.tif" "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/day/20230107/LST_Day_UTM_1km.tif"
+
+gdal_calc.py -A "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/day/20230107/LST_Day_UTM_1km.tif" --outfile="C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/day/20230107/LST_Day_UTM_1km_C.tif" --calc="(A*0.02)-273.15" --NoDataValue=0 --type=Float32

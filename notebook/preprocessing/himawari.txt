@@ -1,0 +1,18 @@
+#Run on OSGeo4W Shell
+#Get info
+gdalinfo "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/day/20220120/20220120000000-JAXA-L2P_GHRSST-SSTskin-H09_AHI-v2.1-v02.0-fv02.0.nc"
+
+#Convert Himawari to geotiff
+gdal_translate NETCDF:"C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/day/20220120/20220120000000-JAXA-L2P_GHRSST-SSTskin-H08_AHI-v2.0-v02.0-fv01.0.nc":sea_surface_temperature "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/day/20220120/Himawari_SST.tif"
+
+#Reproject
+gdalwarp -t_srs EPSG:4326 "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/day/20220120/Himawari_SST.tif" "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/day/20220120/Himawari_SST_WGS84.tif"
+
+#Extract for Melbourne (144.45 -38.50 145.10 -37.90)
+gdalwarp -te 144.50 -37.93 145.20 -38.30 -r bilinear "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/day/20220120/Himawari_SST_WGS84.tif" "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/day/20220120/Himawari_SST_Melb.tif" 
+
+#Reproject to UTM55S EPSG:32755
+gdalwarp -t_srs EPSG:32755 -r bilinear "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/day/20220120/Himawari_SST_Melb.tif" "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/day/20220120/Himawari_SST_Melb_UTM55S.tif"
+
+#Convert to Celcius
+gdal_calc.py -A "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/day/20220120/Himawari_SST_Melb_UTM55S.tif" --outfile="C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/day/20220120/Himawari_UTM_C.tif" --calc="A*0.01" --NoDataValue=9999 --type=Float32
