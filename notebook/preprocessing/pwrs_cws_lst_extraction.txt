@@ -1,0 +1,137 @@
+
+##########################
+### LST EXTRACTION DAY ### 
+##########################
+
+#Extract 
+import arcpy
+from arcpy.sa import ExtractValuesToPoints
+import os
+import re
+import csv
+
+arcpy.CheckOutExtension("Spatial")
+
+points_shp = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\shapefile\wn_bom_pt.shp"
+raster_folder = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\output\raster\day"
+output_csv = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\output\csv\day_pwrs_cws_lst.csv"
+temp_extract_folder = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\output\csv"
+
+if not os.path.exists(temp_extract_folder):
+    os.makedirs(temp_extract_folder)
+
+arcpy.MakeFeatureLayer_management(points_shp, "pwrs_points_lyr")
+
+with open(output_csv, 'w', newline='') as csvfile:
+    writer = csv.DictWriter(csvfile, fieldnames=['p_id', 'source', 'date', 'lst_pred'])
+    writer.writeheader()
+
+    for raster_file in os.listdir(raster_folder):
+        if raster_file.endswith(".tif"):
+            raster_path = os.path.join(raster_folder, raster_file)
+            match = re.search(r'(\d{8})', raster_file) #8 Characters before the date
+            if not match:
+                print(f"Skipping file with no date: {raster_file}")
+                continue
+            date_str = match.group(1)
+            date_formatted = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}"
+
+            print(f"Extracting raster values from {raster_file} for date {date_formatted}")
+
+            out_point_features = os.path.join(temp_extract_folder, f"temp_extract_points_{date_str}.shp")
+
+            if arcpy.Exists(out_point_features):
+                arcpy.Delete_management(out_point_features)
+
+            try:
+                arcpy.sa.ExtractValuesToPoints("pwrs_points_lyr", raster_path, out_point_features, interpolate_values="NONE", add_attributes="VALUE_ONLY")
+            except Exception as e:
+                print(f"Extraction failed for {raster_file}: {e}")
+                continue
+
+            if not arcpy.Exists(out_point_features):
+                print(f"Extraction output not created for {raster_file}, skipping.")
+                continue
+
+            with arcpy.da.SearchCursor(out_point_features, ["p_id", "source", "RASTERVALU"]) as cursor:
+                for p_id, source, raster_val in cursor:
+                    writer.writerow({
+                                    'p_id': p_id,
+                                    'source': source,
+                                    'date': date_formatted,
+                                    'lst_pred': raster_val
+                                })
+
+            arcpy.Delete_management(out_point_features)
+
+arcpy.CheckInExtension("Spatial")
+print("Extraction complete.")
+
+
+############################
+### LST EXTRACTION NIGHT ### 
+############################
+
+#Extract 
+import arcpy
+from arcpy.sa import ExtractValuesToPoints
+import os
+import re
+import csv
+
+arcpy.CheckOutExtension("Spatial")
+
+points_shp = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\shapefile\wn_bom_pt.shp"
+raster_folder = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\output\raster\night"
+output_csv = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\output\csv\night_pwrs_cws_lst.csv"
+temp_extract_folder = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\output\csv"
+
+if not os.path.exists(temp_extract_folder):
+    os.makedirs(temp_extract_folder)
+
+arcpy.MakeFeatureLayer_management(points_shp, "pwrs_points_lyr")
+
+with open(output_csv, 'w', newline='') as csvfile:
+    writer = csv.DictWriter(csvfile, fieldnames=['p_id', 'source', 'date', 'lst_pred'])
+    writer.writeheader()
+
+    for raster_file in os.listdir(raster_folder):
+        if raster_file.endswith(".tif"):
+            raster_path = os.path.join(raster_folder, raster_file)
+            match = re.search(r'(\d{8})', raster_file) #8 Characters before the date
+            if not match:
+                print(f"Skipping file with no date: {raster_file}")
+                continue
+            date_str = match.group(1)
+            date_formatted = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}"
+
+            print(f"Extracting raster values from {raster_file} for date {date_formatted}")
+
+            out_point_features = os.path.join(temp_extract_folder, f"temp_extract_points_{date_str}.shp")
+
+            if arcpy.Exists(out_point_features):
+                arcpy.Delete_management(out_point_features)
+
+            try:
+                arcpy.sa.ExtractValuesToPoints("pwrs_points_lyr", raster_path, out_point_features, interpolate_values="NONE", add_attributes="VALUE_ONLY")
+            except Exception as e:
+                print(f"Extraction failed for {raster_file}: {e}")
+                continue
+
+            if not arcpy.Exists(out_point_features):
+                print(f"Extraction output not created for {raster_file}, skipping.")
+                continue
+
+            with arcpy.da.SearchCursor(out_point_features, ["p_id", "source", "RASTERVALU"]) as cursor:
+                for p_id, source, raster_val in cursor:
+                    writer.writerow({
+                                    'p_id': p_id,
+                                    'source': source,
+                                    'date': date_formatted,
+                                    'lst_pred': raster_val
+                                })
+
+            arcpy.Delete_management(out_point_features)
+
+arcpy.CheckInExtension("Spatial")
+print("Extraction complete.")
