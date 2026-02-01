@@ -1,0 +1,203 @@
+###########
+### DAY ### 
+###########
+
+install.packages("ggrepel")
+# Load required packages
+library(readr)
+library(ggplot2)
+library(ggrepel)
+library(dplyr)
+
+# Load the data (lst_pred_vs_ta)
+data <- read.csv("C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/csv/lst_air_temp_prws.csv")
+
+# Filter temporal
+data <- data %>% filter(temporal == "day")
+
+# Paired tests
+t_test_result <- t.test(data$ta, data$lst_pred, paired = TRUE)
+print(t_test_result)
+
+wilcox_result <- wilcox.test(data$ta, data$lst_pred, paired = TRUE)
+print(wilcox_result)
+
+# R² and RMSE
+r2 <- cor(data$ta, data$lst_pred, use = "complete.obs")^2
+rmse <- sqrt(mean((data$ta - data$lst_pred)^2, na.rm = TRUE))
+
+info_text <- paste0("RMSE: ", round(rmse, 3), " °C\n",
+                    "R²: ", round(r2, 3))
+
+# Set plot limits
+lims <- range(c(data$ta, data$lst_pred), na.rm = TRUE)
+min_val <- min(lims)
+max_val <- max(lims)
+
+# Fix factor order for date
+data$date <- factor(
+  data$date,
+  levels = c("03/12/2022", "27/12/2022","07/01/2023", "27/01/2023")
+)
+
+# Create a color vector: red for 07/01/2023, greys for others
+color_values <- c("03/12/2022" = "grey80",
+                  "27/12/2022" = "grey40",
+                  "07/01/2023" = "red",
+                  "27/01/2023" = "black")
+
+# Plot
+p <- ggplot(data, aes(x = ta, y = lst_pred, color = date)) +
+  geom_point(alpha = 0.7, size = 3) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
+  annotate("text",
+           x = max_val - 0.40 * (max_val - min_val),
+           y = min_val + 0.05 * (max_val - min_val),
+           label = info_text,
+           fontface = "italic",
+           hjust = 0,
+           size = 6,
+           color = "black") +
+  labs(
+    title = "Daytime Air temperature vs. LST",
+    x = "Air temperature (°C)",
+    y = "LST (°C)",
+    color = "Date"
+  ) +
+  coord_fixed() +
+  xlim(min_val, max_val) +
+  ylim(min_val, max_val) +
+  scale_color_manual(
+    values = color_values,
+    labels = function(x) {
+      paste0("<span style='color:",
+             ifelse(x == "07/01/2023", "red", "black"),
+             "'>", x, "</span>")
+    }
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "right",
+    legend.justification = "center",
+    legend.title = element_text(size = 18),
+    legend.text = ggtext::element_markdown(size = 18),
+    axis.title.x = element_text(size = 18, face = "bold"),
+    axis.title.y = element_text(size = 18, face = "bold"),
+    axis.text.x  = element_text(size = 18),
+    axis.text.y  = element_text(size = 18),
+    plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+    panel.background = element_rect(fill = "white", color = "grey"),
+    plot.background  = element_rect(fill = "white", color = NA),
+    panel.border     = element_rect(color = "grey", fill = NA, size = 1),
+    plot.margin = margin(10, 10, 10, 10)
+  )
+
+# Print plot
+print(p)
+
+# Save plot
+ggsave(filename = "20260201_bom_day_observed_vs_predicted.png",
+       plot = p, width = 12, height = 6, dpi = 300)
+
+#############
+### NIGHT ### 
+#############
+
+install.packages("ggrepel")
+# Load required packages
+library(readr)
+library(ggplot2)
+library(ggrepel)
+library(dplyr)
+
+# Load the data (lst_pred_vs_ta)
+data <- read.csv("C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/csv/lst_air_temp_prws.csv")
+
+# Filter temporal
+data <- data %>% filter(temporal == "night")
+
+# Paired tests
+t_test_result <- t.test(data$ta, data$lst_pred, paired = TRUE)
+print(t_test_result)
+
+wilcox_result <- wilcox.test(data$ta, data$lst_pred, paired = TRUE)
+print(wilcox_result)
+
+# R² and RMSE
+r2 <- cor(data$ta, data$lst_pred, use = "complete.obs")^2
+rmse <- sqrt(mean((data$ta - data$lst_pred)^2, na.rm = TRUE))
+
+info_text <- paste0("RMSE: ", round(rmse, 3), " °C\n",
+                    "R²: ", round(r2, 3))
+
+# Set plot limits
+lims <- range(c(data$ta, data$lst_pred), na.rm = TRUE)
+min_val <- min(lims)
+max_val <- max(lims)
+
+# Fix factor order for date
+data$date <- factor(
+  data$date,
+  levels = c("03/12/2022", "25/12/2022", "27/12/2022","07/01/2023", "27/01/2023")
+)
+
+# Create a color vector: red for 07/01/2023, greys for others
+color_values <- c("03/12/2022" = "grey80",
+                  "25/12/2022" = "red",
+                  "27/12/2022" = "grey50",
+                  "07/01/2023" = "grey20",
+                  "27/01/2023" = "black")
+
+# Plot
+p <- ggplot(data, aes(x = ta, y = lst_pred, color = date)) +
+  geom_point(alpha = 0.7, size = 3) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
+  annotate("text",
+           x = max_val - 0.40 * (max_val - min_val),
+           y = min_val + 0.05 * (max_val - min_val),
+           label = info_text,
+           fontface = "italic",
+           hjust = 0,
+           size = 6,
+           color = "black") +
+  labs(
+    title = "Daytime Air temperature vs. LST",
+    x = "Air temperature (°C)",
+    y = "LST (°C)",
+    color = "Date"
+  ) +
+  coord_fixed() +
+  xlim(min_val, max_val) +
+  ylim(min_val, max_val) +
+  scale_color_manual(
+    values = color_values,
+    labels = function(x) {
+      paste0("<span style='color:",
+             ifelse(x == "25/12/2022", "red", "black"),
+             "'>", x, "</span>")
+    }
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "right",
+    legend.justification = "center",
+    legend.title = element_text(size = 18),
+    legend.text = ggtext::element_markdown(size = 18),
+    axis.title.x = element_text(size = 18, face = "bold"),
+    axis.title.y = element_text(size = 18, face = "bold"),
+    axis.text.x  = element_text(size = 18),
+    axis.text.y  = element_text(size = 18),
+    plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+    panel.background = element_rect(fill = "white", color = "grey"),
+    plot.background  = element_rect(fill = "white", color = NA),
+    panel.border     = element_rect(color = "grey", fill = NA, size = 1),
+    plot.margin = margin(10, 10, 10, 10)
+  )
+
+# Print plot
+print(p)
+
+# Save plot
+ggsave(filename = "20260201_bom_night_observed_vs_predicted.png",
+       plot = p, width = 12, height = 6, dpi = 300)
+
