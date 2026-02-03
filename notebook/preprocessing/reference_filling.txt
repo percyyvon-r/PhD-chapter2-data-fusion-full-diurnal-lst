@@ -1,0 +1,78 @@
+
+###################################
+### REFERENCE DATE : 2021/12/12 ### 
+###################################
+import arcpy
+from arcpy.sa import *
+
+arcpy.CheckOutExtension("Spatial")
+arcpy.env.overwriteOutput = True
+
+# Input raster
+raster_in = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\output\raster\night\n_REFER_20211212.tif"
+raster_out = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\output\raster\night\n_REFER_20211212_fill.tif"
+
+filled = Raster(raster_in)
+
+max_iterations = 10
+
+for i in range(max_iterations):
+    focal = FocalStatistics(
+        filled,
+        NbrRectangle(3, 3, "CELL"),
+        "MEAN",
+        "DATA"
+    )
+
+    filled = Con(IsNull(filled), focal, filled)
+
+    remaining = arcpy.GetRasterProperties_management(filled, "ANYNODATA").getOutput(0)
+    print(f"Iteration {i+1}: ANYNODATA = {remaining}")
+
+    if remaining == "0":
+        break
+print("✅ Filled raster saved:", raster_out)
+
+arcpy.CheckInExtension("Spatial")
+
+# 🔴 THIS is the missing step
+filled.save(raster_out)
+
+###################################
+### REFERENCE DATE : 2023/02/09 ### 
+###################################
+import arcpy
+from arcpy.sa import *
+
+arcpy.CheckOutExtension("Spatial")
+arcpy.env.overwriteOutput = True
+
+# Input raster
+raster_in = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\output\raster\night\n_REFER_20230209.tif"
+raster_out = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\output\raster\night\n_REFER_20230209_fill.tif"
+
+filled = Raster(raster_in)
+
+max_iterations = 10
+
+for i in range(max_iterations):
+    focal = FocalStatistics(
+        filled,
+        NbrRectangle(3, 3, "CELL"),
+        "MEAN",
+        "DATA"
+    )
+
+    filled = Con(IsNull(filled), focal, filled)
+
+    remaining = arcpy.GetRasterProperties_management(filled, "ANYNODATA").getOutput(0)
+    print(f"Iteration {i+1}: ANYNODATA = {remaining}")
+
+    if remaining == "0":
+        break
+print("✅ Filled raster saved:", raster_out)
+
+arcpy.CheckInExtension("Spatial")
+
+# 🔴 THIS is the missing step
+filled.save(raster_out)
