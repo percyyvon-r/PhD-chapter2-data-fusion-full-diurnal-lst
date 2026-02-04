@@ -1,0 +1,5 @@
+DeltaT 
+"d_BASE_fine_20230107_ext.tif" + 2 * ( "d_REFERENCE_fine_20210108_ext.tif" -  "d_BASE_fine_20230107_ext.tif")
+
+DeltaS
+ "d_REFERENCE_fine_20210108_ext.tif" + 2 * ( "d_REFERENCE_fine_20210108_ext.tif" -  "d_REFERENCE_coarse_20210108_ext.tif")
