@@ -1,5 +1,76 @@
-DeltaT 
-"d_BASE_fine_20230107_ext.tif" + 2 * ( "d_REFERENCE_fine_20210108_ext.tif" -  "d_BASE_fine_20230107_ext.tif")
+###########
+### Day ###
+###########
 
-DeltaS
- "d_REFERENCE_coarse_20210108_ext.tif" + 2 * ( "d_REFERENCE_fine_20210108_ext.tif" -  "d_REFERENCE_coarse_20210108_ext.tif")
+import arcpy
+from arcpy.sa import *
+
+arcpy.env.workspace = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\output\raster\day"
+arcpy.env.overwriteOutput = True
+
+# Input rasters
+base = Raster("d_BASE_fine_20230107_ext.tif")
+# Reference fine
+F0_20210108 = Raster("d_REFERENCE_fine_20210108_ext.tif")
+F0_20220119 = Raster("d_REFERENCE_fine_20220119_ext.tif")
+F0_20220120 = Raster("d_REFERENCE_fine_20220120_ext.tif")
+# Reference coarse
+C0_20210108 = Raster("d_REFERENCE_coarse_20210108_ext.tif")
+C0_20220119 = Raster("d_REFERENCE_coarse_20220119_ext.tif")
+C0_20220120 = Raster("d_REFERENCE_coarse_20220120_ext.tif")
+
+# Raster calculation
+# deltaT
+deltaT_day_20210108 = base + 2 * (F0_20210108 - base)
+deltaT_day_20220119 = base + 2 * (F0_20220119 - base)
+deltaT_day_20220120 = base + 2 * (F0_20220120 - base)
+
+# deltaS
+deltaS_day_20210108 = C0_20210108 + 2 * (F0_20210108 - C0_20210108)
+deltaS_day_20220119 = C0_20220119 + 2 * (F0_20220119 - C0_20220119)
+deltaS_day_20220120 = C0_20220120 + 2 * (F0_20220120 - C0_20220120)
+
+# Save output
+deltaT_day_20210108.save("deltaT_day_20210108.tif")
+deltaT_day_20220119.save("deltaT_day_20220119.tif")
+deltaT_day_20220120.save("deltaT_day_20220120.tif")
+deltaS_day_20210108.save("deltaS_day_20210108.tif")
+deltaS_day_20220119.save("deltaS_day_20220119.tif")
+deltaS_day_20220120.save("deltaS_day_20220120.tif")
+
+#############
+### Night ###
+#############
+
+import arcpy
+from arcpy.sa import *
+
+arcpy.env.workspace = r"C:\Users\percy\Documents\studies\visual_studio_code\PhD-chapter2-data-fusion-full-diurnal-lst\output\raster\night"
+arcpy.env.overwriteOutput = True
+
+# Input rasters
+base = Raster("n_BASE_fine_20221225_ext.tif")
+# Reference fine
+F0_20211212 = Raster("n_REFERENCE_fine_20211212_ext.tif")
+F0_20230209 = Raster("n_REFERENCE_fine_20230209_ext.tif")
+
+# Reference coarse
+C0_20211212 = Raster("n_REFERENCE_coarse_20211212_ext.tif")
+C0_20230209 = Raster("n_REFERENCE_coarse_20230209_ext.tif")
+
+# Raster calculation
+# deltaT
+deltaT_night_20211212 = base + 2 * (F0_20211212 - base)
+deltaT_night_20230209 = base + 2 * (F0_20230209 - base)
+
+
+# deltaS
+deltaS_night_20211212 = C0_20211212 + 2 * (F0_20211212 - C0_20211212)
+deltaS_night_20230209 = C0_20230209 + 2 * (F0_20230209 - C0_20230209)
+
+
+# Save output
+deltaT_night_20211212.save("deltaT_night_20211212.tif")
+deltaT_night_20230209.save("deltaT_night_20230209.tif")
+deltaS_night_20211212.save("deltaS_night_20211212.tif")
+deltaS_night_20230209.save("deltaS_night_20230209.tif")
