@@ -1,4 +1,4 @@
-temporal,use,date,id,mean_lst,distance,bearing,area,buffer_number
+temporal,use,date,id,mean_lst,distance,direction,area,buffer_number
 day,prediction,3/12/2022,1,37.48082327,0,15,5026.381231,0
 day,prediction,3/12/2022,2,38.22331394,5,45,235.4594715,1
 day,prediction,3/12/2022,3,37.37758553,6,45,287.9311057,2
