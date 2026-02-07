@@ -13,7 +13,7 @@ df <- read_csv("C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2
 # Filter for direction and temporal
 # ---------------------------
 df <- df %>%
-  filter(direction == 255, temporal == "day")
+  filter(direction == 315, temporal == "night")
 
 # ---------------------------
 # Compute cubic smoothing spline predictions per date
@@ -43,16 +43,18 @@ df_spline <- df %>%
 # Order from oldest to newest
 df_spline$date <- factor(df_spline$date, levels = c(
   "3/12/2022",
+  "25/12/2022",
   "27/12/2022",
   "7/01/2023",
   "27/01/2023"
 ))
 
 date_colors <- c(
-  "3/12/2022"  = "gray20",
-  "27/12/2022" = "gray50",
-  "7/01/2023"  = "red",
-  "27/01/2023" = "gray80"
+  "3/12/2022"  = "gray10",
+  "25/12/2022"  = "red",
+  "27/12/2022" = "gray35",
+  "7/01/2023"  = "gray60",
+  "27/01/2023" = "gray85"
 )
 
 
@@ -113,7 +115,7 @@ print(p)
 # Save figure
 # ---------------------------
 ggsave(
-  filename = "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/plots/2025_feb_day_radial.png",
+  filename = "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/plots/night_direction_315.png",
   plot = p,
   width = 12,
   height = 6,
