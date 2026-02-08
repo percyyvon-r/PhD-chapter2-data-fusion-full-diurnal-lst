@@ -10,7 +10,7 @@ library(mgcv)
 # ---------------------------
 # Load DEASE CSV
 # ---------------------------
-df <- read_csv("C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/csv/DEASE_csv/dease_all_dates.csv")
+df <- read_csv("C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/csv/dease_all_dates.csv")
 
 # ---------------------------
 # Filter for direction and temporal
