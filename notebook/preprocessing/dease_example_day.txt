@@ -1,3 +1,6 @@
+# -------------------------------------------------------------------
+# Change the value of the bearing in the filter, title, and file name
+# -------------------------------------------------------------------
 # ---------------------------
 # Load libraries
 # ---------------------------
@@ -84,6 +87,7 @@ p <- ggplot(df_spline, aes(
   ) +
   
   labs(
+    title = "Bearing 75° (ENE)",
     x = "No. of buffer",
     y = expression(LST~(degree*C)),
     color = "Date"
@@ -92,11 +96,13 @@ p <- ggplot(df_spline, aes(
   theme_minimal() +
   theme(
     legend.position = "right",
-    axis.title.x = element_text(size = 24, face = "bold"),
-    axis.title.y = element_text(size = 24, face = "bold"),
-    axis.text.x  = element_text(size = 20),
-    axis.text.y  = element_text(size = 20),
-    plot.title = element_text(hjust = 0.5, size = 12, face = "bold"),
+    legend.title = element_text(size = 18),
+    legend.text = element_text(size = 18),
+    axis.title.x = element_text(size = 20, face = "bold"),
+    axis.title.y = element_text(size = 20, face = "bold"),
+    axis.text.x  = element_text(size = 18),
+    axis.text.y  = element_text(size = 18),
+    plot.title = element_text(hjust = 0.5, size = 24, face = "bold"),
     panel.background = element_rect(fill = "white", color = "grey"),
     plot.background  = element_rect(fill = "white", color = NA),
     panel.border     = element_rect(color = "grey", fill = NA, size = 1),
