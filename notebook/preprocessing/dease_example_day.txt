@@ -1,5 +1,8 @@
+
+
+
 # -------------------------------------------------------------------
-# Change the value of the bearing in the filter, title, and file name
+# Change the value of the bearing in the filter, title, and file name - GAM
 # -------------------------------------------------------------------
 # ---------------------------
 # Load libraries
@@ -119,7 +122,7 @@ print(p)
 # Save figure
 # ---------------------------
 ggsave(
-  filename = "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/plots/day_direction_75.png",
+  filename = "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/plots/day_direction_75_GAM.png",
   plot = p,
   width = 12,
   height = 6,

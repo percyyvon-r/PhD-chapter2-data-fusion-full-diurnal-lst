@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------
-# Change the value of the bearing in the filter, title, and file name
+# Change the value of the bearing in the filter, title, and file name - CUBIC SMOOTHING SPLINE
 # -------------------------------------------------------------------
 
 # ---------------------------
@@ -7,6 +7,8 @@
 # ---------------------------
 library(tidyverse)
 library(mgcv)
+library(tibble)
+library(ggtext)
 
 # ---------------------------
 # Load DEASE CSV
@@ -18,6 +20,130 @@ df <- read_csv("C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2
 # ---------------------------
 df <- df %>%
   filter(direction == 315, temporal == "night")
+
+# ---------------------------
+# Compute cubic smoothing spline predictions per date
+# ---------------------------
+df_spline <- df %>%
+  group_by(date) %>%
+  arrange(buffer_number, .by_group = TRUE) %>%
+  group_modify(~{
+    # Fit cubic smoothing spline
+    fit <- gam(mean_lst ~ s(buffer_number, bs = "cs"), data = .x)
+    pred <- predict(fit, newdata = data.frame(buffer_number = .x$buffer_number))
+    
+    # Replace spline value at buffer_number = 0 with true observed value
+    idx0 <- which(.x$buffer_number == 0)
+    if(length(idx0) == 1) pred[idx0] <- .x$mean_lst[idx0]
+    
+    # Return data frame with predicted values
+    tibble(
+      buffer_number = .x$buffer_number,
+      mean_lst = pred,
+      date = .x$date,
+      direction = .x$direction
+    )
+  }) %>%
+  ungroup()
+
+# Order from oldest to newest
+df_spline$date <- factor(df_spline$date, levels = c(
+  "3/12/2022",
+  "25/12/2022",
+  "27/12/2022",
+  "7/01/2023",
+  "27/01/2023"
+))
+
+date_colors <- c(
+  "3/12/2022"  = "gray10",
+  "25/12/2022"  = "red",
+  "27/12/2022" = "gray35",
+  "7/01/2023"  = "gray60",
+  "27/01/2023" = "gray85"
+)
+
+# Custom labels with markdown for the legend
+date_labels <- c(
+  "3/12/2022"  = "3/12/2022",
+  "25/12/2022" = "<span style='color:red;'>25/12/2022</span>",  # text red
+  "27/12/2022" = "27/12/2022",
+  "7/01/2023"  = "7/01/2023",
+  "27/01/2023" = "27/01/2023"
+)
+
+# ---------------------------
+# Optional: define color palette (automatic for all dates)
+# ---------------------------
+# If you want custom colors for specific dates, replace scale_color_viridis_d() with scale_color_manual()
+color_palette <- viridis::viridis(length(unique(df_spline$date)))
+
+# ---------------------------
+# Plot smoothed curves
+# ---------------------------
+p <- ggplot(df_spline, aes(
+  x = buffer_number,
+  y = mean_lst,
+  color = date,
+  group = date
+)) +
+  geom_line(size = 1.2) +
+  scale_color_manual(values = date_colors, labels = date_labels) +  # use labels here
+  scale_x_continuous(
+    limits = c(0, 31),
+    breaks = seq(0, 31, by = 5),
+    minor_breaks = seq(0, 31, by = 1),
+    expand = c(0, 0)
+  ) +
+  scale_y_continuous(
+    limits = c(10, 40),
+    breaks = seq(10, 40, by = 10),
+    minor_breaks = seq(10, 40, by = 1),
+    expand = c(0, 0)
+  ) +
+  labs(
+    title = "Bearing 315° (NW)",
+    x = "No. of buffer",
+    y = expression(LST~(degree*C)),
+    color = "Date"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "right",
+    legend.title = element_text(size = 18),
+    legend.text = element_markdown(size = 18),  # <-- use markdown for colored text
+    axis.title.x = element_text(size = 20, face = "bold"),
+    axis.title.y = element_text(size = 20, face = "bold"),
+    axis.text.x  = element_text(size = 18),
+    axis.text.y  = element_text(size = 18),
+    plot.title = element_text(hjust = 0.5, size = 24, face = "bold"),
+    panel.background = element_rect(fill = "white", color = "grey"),
+    plot.background  = element_rect(fill = "white", color = NA),
+    panel.border     = element_rect(color = "grey", fill = NA, size = 1),
+    plot.margin = margin(5, 10, 5, 0),
+    panel.grid.minor.x = element_line(colour = "grey85"),
+    panel.grid.major.x = element_line(colour = "grey75")
+  )
+
+
+# Display plot
+print(p)
+
+# ---------------------------
+# Save figure
+# ---------------------------
+ggsave(
+  filename = "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/plots/night_direction_315_cubic.png",
+  plot = p,
+  width = 12,
+  height = 6,
+  dpi = 300
+)
+
+# -------------------------------------------------------------------
+# Change the value of the bearing in the filter, title, and file name - GAM
+# -------------------------------------------------------------------
+
 
 # ---------------------------
 # Compute cubic smoothing spline predictions per date
@@ -44,6 +170,53 @@ df_spline <- df %>%
   }) %>%
   ungroup()
 
+
+# -------------------------------------------------------------------
+# Change the value of the bearing in the filter, title, and file name - CUBIC SMOOTHING SPLINE
+# -------------------------------------------------------------------
+
+# ---------------------------
+# Load libraries
+# ---------------------------
+library(tidyverse)
+library(mgcv)
+library(tibble)
+library(ggtext)
+
+# ---------------------------
+# Load DEASE CSV
+# ---------------------------
+df <- read_csv("C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/csv/dease_all_dates.csv")
+
+# ---------------------------
+# Filter for direction and temporal
+# ---------------------------
+df <- df %>%
+  filter(direction == 285, temporal == "night")
+
+# ---------------------------
+# Compute cubic smoothing spline predictions per date
+# ---------------------------
+df_spline <- df %>%
+  group_by(date) %>%
+  arrange(distance, .by_group = TRUE) %>%
+  group_modify(~{
+    
+    # Fit cubic smoothing spline
+    fit <- smooth.spline(.x$distance, .x$mean_lst)
+    
+    # Predict at observed distances only
+    pred <- predict(fit, .x$distance)
+    
+    tibble(
+      date = .x$date[0],
+      distance = pred$x,
+      mean_lst = pred$y
+    )
+  }) %>%
+  ungroup()
+
+
 # Order from oldest to newest
 df_spline$date <- factor(df_spline$date, levels = c(
   "3/12/2022",
@@ -61,6 +234,14 @@ date_colors <- c(
   "27/01/2023" = "gray85"
 )
 
+# Custom labels with markdown for the legend
+date_labels <- c(
+  "3/12/2022"  = "3/12/2022",
+  "25/12/2022" = "<span style='color:red;'>25/12/2022</span>",  # text red
+  "27/12/2022" = "27/12/2022",
+  "7/01/2023"  = "7/01/2023",
+  "27/01/2023" = "27/01/2023"
+)
 
 # ---------------------------
 # Optional: define color palette (automatic for all dates)
@@ -78,29 +259,30 @@ p <- ggplot(df_spline, aes(
   group = date
 )) +
   geom_line(size = 1.2) +
-  
-  # Manual color mapping
-  scale_color_manual(values = date_colors) +
-  
-  # X axis: major ticks every 5, minor every 1
+  scale_color_manual(values = date_colors, labels = date_labels) +  # use labels here
   scale_x_continuous(
-    breaks = seq(0, ceiling(max(df_spline$distance)/5)*5, by = 5),
-    minor_breaks = seq(0, ceiling(max(df_spline$distance)/5)*5, by = 1),
+    limits = c(0, 30),
+    breaks = seq(0, 30, by = 5),
+    minor_breaks = seq(0, 30, by = 1),
     expand = c(0, 0)
   ) +
-  
+  scale_y_continuous(
+    limits = c(10, 40),
+    breaks = seq(10, 40, by = 10),
+    minor_breaks = seq(10, 40, by = 1),
+    expand = c(0, 0)
+  ) +
   labs(
-    title = "Bearing 315° (NW)",
+    title = "Bearing 285° (WNW)",
     x = "No. of buffer",
     y = expression(LST~(degree*C)),
     color = "Date"
   ) +
-  
   theme_minimal() +
   theme(
     legend.position = "right",
     legend.title = element_text(size = 18),
-    legend.text = element_text(size = 18),
+    legend.text = element_markdown(size = 18),  # <-- use markdown for colored text
     axis.title.x = element_text(size = 20, face = "bold"),
     axis.title.y = element_text(size = 20, face = "bold"),
     axis.text.x  = element_text(size = 18),
@@ -122,7 +304,7 @@ print(p)
 # Save figure
 # ---------------------------
 ggsave(
-  filename = "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/plots/night_direction_315.png",
+  filename = "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/plots/night_direction_285_cubic_b.png",
   plot = p,
   width = 12,
   height = 6,
