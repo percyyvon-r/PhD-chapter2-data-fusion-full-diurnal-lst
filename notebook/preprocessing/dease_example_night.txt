@@ -76,9 +76,9 @@ p <- ggplot(df_raw, aes(
     expand = c(0, 0)
   ) +
   scale_y_continuous(
-    limits = c(10, 40),
-    breaks = seq(10, 40, by = 10),
-    minor_breaks = seq(10, 40, by = 1),
+    limits = c(10, 50),
+    breaks = seq(10, 50, by = 10),
+    minor_breaks = seq(10, 50, by = 1),
     expand = c(0, 0)
   ) +
   labs(
