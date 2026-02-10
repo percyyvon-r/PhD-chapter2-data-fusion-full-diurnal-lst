@@ -1,4 +1,6 @@
-
+# -----------------------------------------------------------------------------------------------------------------
+# With spline 
+# -----------------------------------------------------------------------------------------------------------------
 # ---------------------------
 # Load libraries
 # ---------------------------
@@ -16,20 +18,33 @@ df <- read_csv("C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2
 # Filter for direction and temporal
 # ---------------------------
 df <- df %>%
-  filter(direction == 255, temporal == "day")
+  filter(direction == 285, temporal == "day")
 
 # ---------------------------
-# Keep raw LST data per date
+# Compute cubic smoothing spline predictions per date
 # ---------------------------
-df_raw <- df %>%
+df_spline <- df %>%
   group_by(date) %>%
   arrange(distance, .by_group = TRUE) %>%
-  select(date, distance, mean_lst) %>%
+  group_modify(~{
+    
+    # Fit cubic smoothing spline
+    fit <- smooth.spline(.x$distance, .x$mean_lst)
+    
+    # Predict at observed distances only
+    pred <- predict(fit, .x$distance)
+    
+    tibble(
+      date = .x$date[0],
+      distance = pred$x,
+      mean_lst = pred$y
+    )
+  }) %>%
   ungroup()
 
 
 # Order from oldest to newest
-df_raw$date <- factor(df_raw$date, levels = c(
+df_spline$date <- factor(df_spline$date, levels = c(
   "3/12/2022",
   "27/12/2022",
   "7/01/2023",
@@ -55,12 +70,12 @@ date_labels <- c(
 # Optional: define color palette (automatic for all dates)
 # ---------------------------
 # If you want custom colors for specific dates, replace scale_color_viridis_d() with scale_color_manual()
-color_palette <- viridis::viridis(length(unique(df_raw$date)))
+color_palette <- viridis::viridis(length(unique(df_spline$date)))
 
 # ---------------------------
 # Plot smoothed curves
 # ---------------------------
-p <- ggplot(df_raw, aes(
+p <- ggplot(df_spline, aes(
   x = distance,
   y = mean_lst,
   color = date,
@@ -81,8 +96,8 @@ p <- ggplot(df_raw, aes(
     expand = c(0, 0)
   ) +
   labs(
-    title = "Daytime LST Profile — Bearing 255° (WSW)",
-    x = "Distance from the Image Centre Point (km)",
+    title = "Bearing 285° (WNW)",
+    x = "No. of buffer",
     y = expression(LST~(degree*C)),
     color = "Date"
   ) +
@@ -91,10 +106,10 @@ p <- ggplot(df_raw, aes(
     legend.position = "right",
     legend.title = element_text(size = 18),
     legend.text = element_markdown(size = 18),  # <-- use markdown for colored text
-    axis.title.x = element_text(size = 18, face = "bold"),
-    axis.title.y = element_text(size = 18, face = "bold"),
-    axis.text.x  = element_text(size = 16),
-    axis.text.y  = element_text(size = 16),
+    axis.title.x = element_text(size = 20, face = "bold"),
+    axis.title.y = element_text(size = 20, face = "bold"),
+    axis.text.x  = element_text(size = 18),
+    axis.text.y  = element_text(size = 18),
     plot.title = element_text(hjust = 0.5, size = 24, face = "bold"),
     panel.background = element_rect(fill = "white", color = "grey"),
     plot.background  = element_rect(fill = "white", color = NA),
@@ -112,11 +127,38 @@ print(p)
 # Save figure
 # ---------------------------
 ggsave(
-  filename = "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/plots/day_direction_255.png",
+  filename = "C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/plots/day_direction_285_cubic_b.png",
   plot = p,
   width = 12,
   height = 6,
   dpi = 300
 )
 
+# -----------------------------------------------------------------------------------------------------------------
+# With GAM
+# -----------------------------------------------------------------------------------------------------------------
 
+# ---------------------------
+# Compute cubic smoothing spline predictions per date
+# ---------------------------
+df_spline <- df %>%
+  group_by(date) %>%
+  arrange(distance, .by_group = TRUE) %>%
+  group_modify(~{
+    # Fit cubic smoothing spline
+    fit <- gam(mean_lst ~ s(distance, bs = "cs"), data = .x)
+    pred <- predict(fit, newdata = data.frame(distance = .x$distance))
+    
+    # Replace spline value at distance = 0 with true observed value
+    idx0 <- which(.x$distance == 0)
+    if(length(idx0) == 1) pred[idx0] <- .x$mean_lst[idx0]
+    
+    # Return data frame with predicted values
+    tibble(
+      distance = .x$distance,
+      mean_lst = pred,
+      date = .x$date,
+      direction = .x$direction
+    )
+  }) %>%
+  ungroup()
