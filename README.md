@@ -177,7 +177,7 @@ jupyter notebook notebook/fused_lst_temporalStability_spatialPatternConsistency.
 
 ## Author
 
-Percy Yvon-Boucher  
+Percy Yvon Rakoto 
 PhD Researcher, Chapter 2 Study
 
 ## License
