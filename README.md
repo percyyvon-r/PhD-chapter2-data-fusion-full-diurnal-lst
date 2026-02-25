@@ -142,9 +142,9 @@ pip install -r requirements.txt
 
 ## Study Area
 
-- **Location**: Port Philip Bay, Australia
-- **Period**: Peak summer months (December - February)
-- **Analysis Years**: 2021-2023
+- **Location**: Melbourne, Australia
+- **Period**: Peak summer months (December - January)
+- **Analysis Years**: 2022-2023
 
 ## How to Use
 
@@ -177,7 +177,7 @@ jupyter notebook notebook/fused_lst_temporalStability_spatialPatternConsistency.
 
 ## Author
 
-Percy Yvon-Boucher  
+Percy Yvon Rakoto 
 PhD Researcher, Chapter 2 Study
 
 ## License
