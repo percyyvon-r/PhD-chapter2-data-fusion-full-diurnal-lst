@@ -1,0 +1,28 @@
+<PAMDataset>
+  <Metadata>
+    <MDI key="AREA_OR_POINT">Area</MDI>
+    <MDI key="DataType">Generic</MDI>
+    <MDI key="TIFFTAG_SOFTWARE">GDAL 3.10.2e (3100211) (4.7.0;1743;3.0.3;2.1.6;0.11.1;0x10400;;4.0.0;), PROJ 9.5.0 (EPSG.VERSION=v11.022;EPSG.DATE=2024-11-05;ESRI.VERSION=ArcGIS Pro 3.4;ESRI.DATE=2024-11-04;PROJ_DATA.VERSION=1.20;)</MDI>
+  </Metadata>
+  <Metadata domain="ENVI">
+    <MDI key="samples">1665</MDI>
+    <MDI key="lines">1333</MDI>
+    <MDI key="bands">1</MDI>
+    <MDI key="header_offset">0</MDI>
+    <MDI key="file_type">ENVI Standard</MDI>
+    <MDI key="data_type">4</MDI>
+    <MDI key="interleave">bsq</MDI>
+    <MDI key="byte_order">0</MDI>
+  </Metadata>
+  <Metadata domain="IMAGE_STRUCTURE">
+    <MDI key="INTERLEAVE">BAND</MDI>
+  </Metadata>
+  <PAMRasterBand band="1">
+    <Description>Band_1</Description>
+    <NoDataValue le_hex_equiv="000000E0FFFFEFC7">-3.40282346638529E+38</NoDataValue>
+    <Metadata>
+      <MDI key="BandName">Band_1</MDI>
+      <MDI key="RepresentationType">ATHEMATIC</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

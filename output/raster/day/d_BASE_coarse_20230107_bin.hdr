@@ -1,0 +1,17 @@
+ENVI
+description = {
+C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/raster/day/d_BASE_coarse_20230107_bin.bin}
+samples = 1665
+lines   = 1333
+bands   = 1
+header offset = 0
+file type = ENVI Standard
+data type = 4
+interleave = bsq
+byte order = 0
+map info = {UTM, 1, 1, 290310, 5840640, 30, 30, 55, South,WGS-84}
+coordinate system string = {PROJCS["WGS_1984_UTM_Zone_55S",GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["False_Easting",500000.0],PARAMETER["False_Northing",10000000.0],PARAMETER["Central_Meridian",147.0],PARAMETER["Scale_Factor",0.9996],PARAMETER["Latitude_Of_Origin",0.0],UNIT["Meter",1.0]]}
+band names = {
+Band_1}
+data ignore value = -3.4028234663852886e+38
+default bands = {1}

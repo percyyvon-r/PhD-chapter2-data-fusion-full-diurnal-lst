@@ -1,1 +1,2 @@
 *.ext filter=lfs diff=lfs merge=lfs -text
+output/raster/SSIM_maps/*.csv filter=lfs diff=lfs merge=lfs -text

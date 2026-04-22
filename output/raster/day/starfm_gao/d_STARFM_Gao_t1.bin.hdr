@@ -1,0 +1,18 @@
+ENVI
+description = {
+predicted fine resolution reflectance for d_REFERENCE_coarse_t1.bin
+using following image pairs:
+d_BASE_FINE_t0.bin d_BASE_coarse_t0.bin
+}
+samples = 1665
+lines = 1332
+x start = 1
+y start = 1
+bands = 1
+header offset = 0
+file type = ENVI Standard
+data type = 2
+interleave = bsq
+sensor type = Unknown
+byte order = 0
+wavelength units = Unknown

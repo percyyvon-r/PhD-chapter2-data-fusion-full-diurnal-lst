@@ -1,0 +1,19 @@
+ENVI
+description = {
+predicted fine resolution reflectance for sim_MODIS_t3.bin
+using following image pairs:
+sim_Landsat_t1.bin sim_MODIS_t1.bin
+sim_Landsat_t4.bin sim_MODIS_t4.bin
+}
+samples = 150
+lines = 150
+x start = 1
+y start = 1
+bands = 1
+header offset = 0
+file type = ENVI Standard
+data type = 2
+interleave = bsq
+sensor type = Unknown
+byte order = 0
+wavelength units = Unknown

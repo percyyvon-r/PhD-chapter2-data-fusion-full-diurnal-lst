@@ -1,0 +1,9 @@
+gdal_translate -of ENVI C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/raster/day/d_BASE_FINE_20230107.tif C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/raster/day/d_BASE_FINE_20230107_bin.bin
+gdal_translate -of ENVI C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/raster/day/d_BASE_coarse_20230107.tif C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/raster/day/d_BASE_coarse_20230107_bin.bin
+gdal_translate -of ENVI C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/raster/day/d_REFERENCE_coarse_20210108.tif C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/raster/day/d_REFERENCE_coarse_20210108_bin.bin
+
+gdal_translate -of ENVI C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/raster/day/d_BASE_coarse_20230107_bis.tif C:/Users/percy/Documents/studies/visual_studio_code/PhD-chapter2-data-fusion-full-diurnal-lst/output/raster/day/d_BASE_coarse_20230107_bis_bin.bin
+
+
+---------------------------------------
+gdal_translate -of ENVI input.tif output.bin
